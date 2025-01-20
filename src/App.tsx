@@ -24,7 +24,8 @@ import {
   ViewList, 
   ViewStream, 
   ContentPaste, 
-  ContentCopy 
+  ContentCopy,
+  AutoFixHigh 
 } from '@mui/icons-material';
 
 interface UrlItem {
@@ -224,46 +225,56 @@ function App() {
             }}
           />
 
-          <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center">
-            <Stack direction="row" spacing={2} alignItems="center">
-              <LoadingButton 
-                loading={isProcessing}
-                variant="contained" 
-                onClick={handleSubmit}
-                sx={{ 
-                  minWidth: 200,
-                  bgcolor: '#4299e1',
-                  '&:hover': {
-                    bgcolor: '#2b6cb0'
-                  }
-                }}
-                >
-                  Видалити дублікати
-                </LoadingButton>
-              
-              
-              <ToggleButtonGroup
-                value={viewMode}
-                exclusive
-                onChange={handleViewModeChange}
-                aria-label="view mode"
-                sx={{ 
-                  bgcolor: 'white',
-                  '& .Mui-selected': {
-                    bgcolor: '#4299e1 !important',
-                    color: 'white !important'
-                  }
-                }}
-              >
-                <ToggleButton value="table" aria-label="table view">
-                  <ViewList />
-                </ToggleButton>
-                <ToggleButton value="text" aria-label="text view">
-                  <ViewStream />
-                </ToggleButton>
-              </ToggleButtonGroup>
+          <Stack 
+            direction="row" 
+            spacing={2} 
+            alignItems="center" 
+            justifyContent="center"
+            useFlexGap 
+            flexWrap="wrap"
+          >
+            <LoadingButton 
+              loading={isProcessing}
+              variant="contained" 
+              onClick={handleSubmit}
+              sx={{ 
+                minWidth: { xs: 'auto', sm: 200 },
+                bgcolor: '#4299e1',
+                '&:hover': {
+                  bgcolor: '#2b6cb0'
+                }
+              }}
+            >
+              <AutoFixHigh />
+              <Box sx={{ display: { xs: 'none', sm: 'block' }, ml: 1 }}>
+                Видалити дублікати
+              </Box>
+            </LoadingButton>
+            
+            <ToggleButtonGroup
+              value={viewMode}
+              exclusive
+              onChange={handleViewModeChange}
+              aria-label="view mode"
+              sx={{ 
+                bgcolor: 'white',
+                '& .Mui-selected': {
+                  bgcolor: '#4299e1 !important',
+                  color: 'white !important'
+                }
+              }}
+            >
+              <ToggleButton value="table" aria-label="table view">
+                <ViewList />
+              </ToggleButton>
+              <ToggleButton value="text" aria-label="text view">
+                <ViewStream />
+              </ToggleButton>
+            </ToggleButtonGroup>
 
-              <ToggleButtonGroup
+            {urlItems.length > 0 && (
+              <>
+                <ToggleButtonGroup
                   value={copyFormat}
                   exclusive
                   onChange={(_event, newFormat) => {
@@ -282,26 +293,31 @@ function App() {
                 >
                   <ToggleButton value="compact" aria-label="compact format">
                     <Tooltip title="Компактний формат">
-                      <Box sx={{ px: 1 }}>Компактний</Box>
+                      <Box sx={{ px: { xs: 0.5, sm: 1 } }}>
+                        <Box sx={{ display: { xs: 'none', sm: 'block' } }}>Компактний</Box>
+                        <Box sx={{ display: { xs: 'block', sm: 'none' } }}>1×</Box>
+                      </Box>
                     </Tooltip>
                   </ToggleButton>
                   <ToggleButton value="spaced" aria-label="spaced format">
                     <Tooltip title="З пропусками">
-                      <Box sx={{ px: 1 }}>З пропусками</Box>
+                      <Box sx={{ px: { xs: 0.5, sm: 1 } }}>
+                        <Box sx={{ display: { xs: 'none', sm: 'block' } }}>З пропусками</Box>
+                        <Box sx={{ display: { xs: 'block', sm: 'none' } }}>2×</Box>
+                      </Box>
                     </Tooltip>
                   </ToggleButton>
                 </ToggleButtonGroup>
-            </Stack>
 
-            {urlItems.length > 0 && (
-              <Tooltip title="Скопіювати результат">
-                <IconButton 
-                  onClick={handleCopy}
-                  sx={{ color: 'white' }}
-                >
-                  <ContentCopy />
-                </IconButton>
-              </Tooltip>
+                <Tooltip title="Скопіювати результат">
+                  <IconButton 
+                    onClick={handleCopy}
+                    sx={{ color: 'white' }}
+                  >
+                    <ContentCopy />
+                  </IconButton>
+                </Tooltip>
+              </>
             )}
           </Stack>
 
