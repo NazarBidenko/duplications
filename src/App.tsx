@@ -37,6 +37,7 @@ function App() {
   const [urlItems, setUrlItems] = useState<UrlItem[]>([]);
   const [viewMode, setViewMode] = useState<'table' | 'text'>('table');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [copyFormat, setCopyFormat] = useState<'compact' | 'spaced'>('compact');
 
   const removeDuplicateUrls = (text: string) => {
     const lines = text.split(/[\n\s]+/);
@@ -86,6 +87,12 @@ function App() {
     );
   };
 
+  const handleSelectAll = (checked: boolean) => {
+    setUrlItems(prevItems => 
+      prevItems.map(item => ({ ...item, isUsed: checked }))
+    );
+  };
+
   const handleViewModeChange = (
     _event: React.MouseEvent<HTMLElement>,
     newMode: 'table' | 'text' | null
@@ -106,9 +113,11 @@ function App() {
 
   const handleCopy = async () => {
     try {
+      const separator = copyFormat === 'compact' ? '\n' : '\n\n';
       const textToCopy = viewMode === 'table' 
-        ? urlItems.map(item => item.url).join('\n')
-        : urlItems.map(item => item.url).join('\n');
+        ? urlItems.map(item => `${item.isUsed ? '✅' : '❌'} ${item.url}`).join(separator)
+        : urlItems.map(item => item.url).join(separator);
+      
       await navigator.clipboard.writeText(textToCopy);
     } catch (err) {
       console.error('Failed to copy:', err);
@@ -117,7 +126,7 @@ function App() {
 
   const renderTextOutput = () => (
     <TextField
-      value={urlItems.map(item => item.url).join('\n')}
+      value={urlItems.map(item => item.url).join(copyFormat === 'compact' ? '\n' : '\n\n')}
       multiline
       rows={10}
       fullWidth
@@ -134,7 +143,13 @@ function App() {
       <Table stickyHeader>
         <TableHead>
           <TableRow>
-            <TableCell>Використано</TableCell>
+            <TableCell padding="checkbox">
+              <Checkbox
+                indeterminate={urlItems.some(item => item.isUsed) && !urlItems.every(item => item.isUsed)}
+                checked={urlItems.length > 0 && urlItems.every(item => item.isUsed)}
+                onChange={(event) => handleSelectAll(event.target.checked)}
+              />
+            </TableCell>
             <TableCell>URL</TableCell>
           </TableRow>
         </TableHead>
@@ -247,6 +262,35 @@ function App() {
                   <ViewStream />
                 </ToggleButton>
               </ToggleButtonGroup>
+
+              <ToggleButtonGroup
+                  value={copyFormat}
+                  exclusive
+                  onChange={(_event, newFormat) => {
+                    if (newFormat !== null) {
+                      setCopyFormat(newFormat);
+                    }
+                  }}
+                  aria-label="copy format"
+                  sx={{ 
+                    bgcolor: 'white',
+                    '& .Mui-selected': {
+                      bgcolor: '#4299e1 !important',
+                      color: 'white !important'
+                    }
+                  }}
+                >
+                  <ToggleButton value="compact" aria-label="compact format">
+                    <Tooltip title="Компактний формат">
+                      <Box sx={{ px: 1 }}>Компактний</Box>
+                    </Tooltip>
+                  </ToggleButton>
+                  <ToggleButton value="spaced" aria-label="spaced format">
+                    <Tooltip title="З пропусками">
+                      <Box sx={{ px: 1 }}>З пропусками</Box>
+                    </Tooltip>
+                  </ToggleButton>
+                </ToggleButtonGroup>
             </Stack>
 
             {urlItems.length > 0 && (
