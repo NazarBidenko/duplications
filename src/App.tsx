@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
-import './App.css';
 import {
+  Box,
+  Container,
+  Typography,
+  TextField,
+  Button,
   Table,
   TableBody,
   TableCell,
@@ -9,11 +13,19 @@ import {
   TableRow,
   Paper,
   Checkbox,
-  Typography,
   ToggleButton,
-  ToggleButtonGroup
+  ToggleButtonGroup,
+  IconButton,
+  Tooltip,
+  Stack
 } from '@mui/material';
-import { ViewList, ViewStream } from '@mui/icons-material';
+import { LoadingButton } from '@mui/lab';
+import { 
+  ViewList, 
+  ViewStream, 
+  ContentPaste, 
+  ContentCopy 
+} from '@mui/icons-material';
 
 interface UrlItem {
   url: string;
@@ -24,6 +36,7 @@ function App() {
   const [input, setInput] = useState<string>('');
   const [urlItems, setUrlItems] = useState<UrlItem[]>([]);
   const [viewMode, setViewMode] = useState<'table' | 'text'>('table');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const removeDuplicateUrls = (text: string) => {
     const lines = text.split(/[\n\s]+/);
@@ -53,9 +66,16 @@ function App() {
     setInput(e.target.value);
   };
 
-  const handleSubmit = () => {
-    const cleanedUrls = removeDuplicateUrls(input);
-    setUrlItems(cleanedUrls);
+  const handleSubmit = async () => {
+    setIsProcessing(true);
+    try {
+      // Додаємо штучну затримку для демонстрації лоадера
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const cleanedUrls = removeDuplicateUrls(input);
+      setUrlItems(cleanedUrls);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleCheckboxChange = (index: number) => {
@@ -75,13 +95,37 @@ function App() {
     }
   };
 
+  const handlePaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      setInput(text);
+    } catch (err) {
+      console.error('Failed to read clipboard:', err);
+    }
+  };
+
+  const handleCopy = async () => {
+    try {
+      const textToCopy = viewMode === 'table' 
+        ? urlItems.map(item => item.url).join('\n')
+        : urlItems.map(item => item.url).join('\n');
+      await navigator.clipboard.writeText(textToCopy);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
   const renderTextOutput = () => (
-    <textarea
+    <TextField
       value={urlItems.map(item => item.url).join('\n')}
-      readOnly
-      placeholder="Результат буде тут"
+      multiline
       rows={10}
-      className="output-area"
+      fullWidth
+      InputProps={{
+        readOnly: true,
+        sx: { fontFamily: 'monospace', bgcolor: 'white' }
+      }}
+      placeholder="Результат буде тут"
     />
   );
 
@@ -96,10 +140,7 @@ function App() {
         </TableHead>
         <TableBody>
           {urlItems.map((item, index) => (
-            <TableRow 
-              key={index}
-              sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-            >
+            <TableRow key={index}>
               <TableCell padding="checkbox">
                 <Checkbox
                   checked={item.isUsed}
@@ -131,43 +172,101 @@ function App() {
   );
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>URL Duplicates Remover</h1>
-        <div className="container">
-          <textarea
+    <Box sx={{ 
+      bgcolor: '#1a365d',
+      minHeight: '100vh',
+      py: 3,
+      color: 'white'
+    }}>
+      <Container maxWidth="lg">
+        <Stack spacing={3}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h4" component="h1">
+              URL Duplicates Remover
+            </Typography>
+            <Tooltip title="Вставити з буфера обміну">
+              <IconButton 
+                onClick={handlePaste}
+                sx={{ color: 'white' }}
+              >
+                <ContentPaste />
+              </IconButton>
+            </Tooltip>
+          </Box>
+          
+          <TextField
             value={input}
             onChange={handleInputChange}
-            placeholder="Вставте список URL (кожне посилання з нового рядка або через пробіл)"
+            multiline
             rows={10}
-            className="input-area"
+            fullWidth
+            placeholder="Вставте список URL (кожне посилання з нового рядка або через пробіл)"
+            InputProps={{
+              sx: { 
+                fontFamily: 'monospace',
+                bgcolor: 'white'
+              }
+            }}
           />
-          <div className="controls">
-            <button onClick={handleSubmit} className="submit-button">
-              Видалити дублікати
-            </button>
-            <ToggleButtonGroup
-              value={viewMode}
-              exclusive
-              onChange={handleViewModeChange}
-              aria-label="view mode"
-              sx={{ ml: 2, bgcolor: 'white' }}
-            >
-              <ToggleButton value="table" aria-label="table view">
-                <ViewList />
-              </ToggleButton>
-              <ToggleButton value="text" aria-label="text view">
-                <ViewStream />
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </div>
-          
+
+          <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center">
+            <Stack direction="row" spacing={2} alignItems="center">
+              <LoadingButton 
+                loading={isProcessing}
+                variant="contained" 
+                onClick={handleSubmit}
+                sx={{ 
+                  minWidth: 200,
+                  bgcolor: '#4299e1',
+                  '&:hover': {
+                    bgcolor: '#2b6cb0'
+                  }
+                }}
+                >
+                  Видалити дублікати
+                </LoadingButton>
+              
+              
+              <ToggleButtonGroup
+                value={viewMode}
+                exclusive
+                onChange={handleViewModeChange}
+                aria-label="view mode"
+                sx={{ 
+                  bgcolor: 'white',
+                  '& .Mui-selected': {
+                    bgcolor: '#4299e1 !important',
+                    color: 'white !important'
+                  }
+                }}
+              >
+                <ToggleButton value="table" aria-label="table view">
+                  <ViewList />
+                </ToggleButton>
+                <ToggleButton value="text" aria-label="text view">
+                  <ViewStream />
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </Stack>
+
+            {urlItems.length > 0 && (
+              <Tooltip title="Скопіювати результат">
+                <IconButton 
+                  onClick={handleCopy}
+                  sx={{ color: 'white' }}
+                >
+                  <ContentCopy />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Stack>
+
           {urlItems.length > 0 && (
             viewMode === 'table' ? renderTableOutput() : renderTextOutput()
           )}
-        </div>
-      </header>
-    </div>
+        </Stack>
+      </Container>
+    </Box>
   );
 }
 
